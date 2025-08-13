@@ -6,7 +6,8 @@
 {
     "name": "nextflow-training",
     "image": "ghcr.io/nextflow-io/training:latest",
-    "workspaceFolder": "/workspaces/training",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    // "workspaceFolder": "/workspaces/training",
     "remoteUser": "root",
     "remoteEnv": {
         // Nextflow installation version
