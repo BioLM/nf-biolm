@@ -1,0 +1,46 @@
+# Nextflow runtime and cache
+work/
+.nextflow*
+.nextflow/
+.nextflow.log
+.cache/
+reports/
+timeline.html
+dag.png
+trace.txt
+
+# Common results/output (customize for your pipeline)
+results/
+output/
+logs/
+*.out
+*.err
+*.log
+
+# Conda environments
+.conda/
+.env/
+*.conda
+*.yaml.lock
+
+# Python virtualenvs
+venv/
+.env/
+__pycache__/
+*.pyc
+
+# Docker / Singularity / Apptainer
+*.sif
+*.img
+singularity/
+apptainer/
+.docker/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
