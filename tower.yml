@@ -1,0 +1,7 @@
+name: nf-biolm
+description: BioLM SDK in Nextflow - Protein structure prediction using ESMFold
+repository: https://github.com/your-username/nf-biolm
+mainScript: intro.nf
+revision: main
+valid: true
+visibility: public

@@ -1,5 +1,12 @@
 # nf-biolm: BioLM SDK in Nextflow
 
+[![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A5%2020.0.0-brightgreen.svg)](https://www.nextflow.io/)
+[![run with docker](https://img.shields.io/badge/docker-%20%20%F0%9F%8C%A2%20%20run%20with%20docker-blue.svg)](https://www.docker.com/)
+[![run with singularity](https://img.shields.io/badge/singularity-%20%20%F0%9F%8C%A2%20%20run%20with%20singularity-orange.svg)](https://sylabs.io/docs/)
+[![Launch on Seqera Platform](https://img.shields.io/badge/launch%20on-seqera%20platform-blue.svg)](https://cloud.seqera.io/)
+[![BioLM SDK](https://img.shields.io/badge/biolm%20sdk-%E2%89%A5%200.1.0-green.svg)](https://github.com/BioLM/biolm-python)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive example demonstrating how to use the BioLM SDK within Nextflow pipelines for protein structure prediction. This project provides a unified workflow that can run in demo mode or process FASTA files.
 
 ## 🚀 Quick Start (5 minutes)
@@ -50,6 +57,25 @@ ls -la results/
 head -20 results/*.pdb
 ```
 
+## ☁️ Launch on Seqera Platform
+
+You can run this workflow directly on [Seqera Platform](https://cloud.seqera.io/) without any local setup:
+
+1. **Click the badge**: [![Launch on Seqera Platform](https://img.shields.io/badge/launch%20on-seqera%20platform-blue.svg)](https://cloud.seqera.io/)
+2. **Sign in** to your Seqera Platform account
+3. **Configure parameters**:
+   - Set your `BIOLMAI_TOKEN` as an environment variable
+   - Choose your input mode (demo, default, or custom FASTA)
+   - Configure compute resources
+4. **Launch** the workflow
+
+**Benefits of Seqera Platform:**
+- No local installation required
+- Scalable cloud compute resources
+- Built-in monitoring and visualization
+- Easy parameter configuration
+- Automatic result management
+
 ## What This Example Does
 
 This project demonstrates:
@@ -88,6 +114,7 @@ nf-biolm/
 ├── intro.nf              # Main workflow (unified)
 ├── nextflow.config       # Configuration
 ├── requirements.txt      # Python dependencies
+├── tower.yml            # Seqera Platform configuration
 ├── README.md            # This file
 ├── results/             # Output directory
 │   └── *.pdb           # Protein structure files
