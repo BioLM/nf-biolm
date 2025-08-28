@@ -2,6 +2,54 @@
 
 A comprehensive example demonstrating how to use the BioLM SDK within Nextflow pipelines for protein structure prediction. This project provides a unified workflow that can run in demo mode or process FASTA files.
 
+## 🚀 Quick Start (5 minutes)
+
+### 1. Install Dependencies
+```bash
+# Install BioLM SDK
+pip install biolmai
+
+# Install Nextflow (if needed)
+curl -s https://get.nextflow.io | bash
+```
+
+### 2. Get Your BioLM Token
+1. Visit [BioLM](https://biolm.ai/)
+2. Sign up and get your API token
+3. Set it as an environment variable:
+   ```bash
+   export BIOLMAI_TOKEN="your_token_here"
+   ```
+
+### 3. Run the Workflow
+
+**Option A: Quick Demo (Recommended for first-time users)**
+```bash
+nextflow run intro.nf --demo
+# Output: results/DEMO.pdb
+```
+
+**Option B: Default Example**
+```bash
+nextflow run intro.nf
+# Output: results/GFP.pdb
+```
+
+**Option C: Your Own Sequences**
+```bash
+nextflow run intro.nf --input your_proteins.fasta
+# Output: results/sequence1.pdb, results/sequence2.pdb, etc.
+```
+
+### 4. Check Results
+```bash
+# List output files
+ls -la results/
+
+# View PDB structure (first few lines)
+head -20 results/*.pdb
+```
+
 ## What This Example Does
 
 This project demonstrates:
@@ -15,37 +63,6 @@ This project demonstrates:
 1. **BioLM API Token**: Get your token from [BioLM](https://biolm.ai/)
 2. **Python 3.7+**: With the BioLM SDK installed
 3. **Nextflow**: Version 20.0 or later
-
-## Quick Start
-
-### 1. Install Dependencies
-
-```bash
-# Install BioLM SDK
-pip install biolmai
-
-# Install Nextflow (if needed)
-curl -s https://get.nextflow.io | bash
-```
-
-### 2. Set Your API Token
-
-```bash
-export BIOLMAI_TOKEN="your_token_here"
-```
-
-### 3. Run the Workflow
-
-```bash
-# Demo mode (quick test with hardcoded sequence)
-nextflow run intro.nf --demo
-
-# Default mode (uses GFP sequence)
-nextflow run intro.nf
-
-# With your own FASTA file
-nextflow run intro.nf --input your_sequences.fasta
-```
 
 ## Workflow Modes
 
@@ -72,7 +89,6 @@ nf-biolm/
 ├── nextflow.config       # Configuration
 ├── requirements.txt      # Python dependencies
 ├── README.md            # This file
-├── QUICKSTART.md        # Quick start guide
 ├── results/             # Output directory
 │   └── *.pdb           # Protein structure files
 └── work/               # Nextflow work directory
@@ -114,9 +130,22 @@ nextflow run intro.nf --input my_proteins.fasta
 # Output: results/sequence1.pdb, results/sequence2.pdb, etc.
 ```
 
+## What You Get
+
+- **PDB Files**: Standard protein structure files ready for visualization
+- **Clean Output**: No intermediate JSON files, just the structures you need
+- **Scalable**: Can process single sequences or entire FASTA files
+
+## Next Steps
+
+- **Visualize**: Open PDB files in tools like PyMOL, Chimera, or online viewers
+- **Customize**: Modify the workflow for your specific needs
+- **Scale Up**: Process larger datasets with more compute resources
+
 ## Troubleshooting
 
 - **API Token Issues**: Ensure `BIOLMAI_TOKEN` is set correctly
+- **Import Error**: Run `pip install biolmai`
 - **Workflow errors**: Check the `.nextflow.log` file for details
 - **API Rate Limits**: BioLM has rate limits; wait between requests if needed
 
