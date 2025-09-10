@@ -183,7 +183,17 @@ process generate_variants {
     import json
     import time
     import os
+    import sys
     from biolmai import BioLM
+
+    # Check if API token is provided
+    # Try parameter first, then environment variable
+    token = "${params.token}" if "${params.token}".strip() else os.getenv('BIOLMAI_TOKEN', '')
+    if not token.strip():
+        print("ERROR: BioLM API token is not set!")
+        print("Please set your BIOLMAI_TOKEN environment variable or use --token parameter")
+        print("Get your token from: https://biolm.ai/")
+        sys.exit(1)
 
     # Target mapping based on PDB IDs
     target_mapping = {
@@ -245,7 +255,7 @@ process generate_variants {
                     action="generate",
                     items=payload["items"],
                     params=payload["params"],
-                    api_key="${params.token}"
+                    api_key=token
                 )
                 end = time.time()
 
@@ -277,21 +287,62 @@ process analyze_cdrs {
     import json
     import pandas as pd
     import os
-    from abnumber import Chain
-
+    
+    def extract_cdrs_simple(seq, chain_type='heavy'):
+        # Simple complementarity determining region extraction based on IMGT numbering positions
+        # This is a fallback when abnumber is not available
+        if not seq or len(seq) < 50:
+            return {'cdr1': None, 'cdr2': None, 'cdr3': None}
+        
+        try:
+            # Approximate complementarity determining region positions based on IMGT numbering
+            # These are rough estimates and may not be 100% accurate
+            if chain_type == 'heavy':
+                # Heavy chain complementarity determining region positions (approximate)
+                cdr1_start, cdr1_end = 26, 35  # region 1
+                cdr2_start, cdr2_end = 52, 66  # region 2  
+                cdr3_start, cdr3_end = 99, 106 # region 3
+            else:
+                # Light chain complementarity determining region positions (approximate)
+                cdr1_start, cdr1_end = 24, 34  # region 1
+                cdr2_start, cdr2_end = 50, 56  # region 2
+                cdr3_start, cdr3_end = 89, 97  # region 3
+            
+            # Extract complementarity determining regions with bounds checking
+            cdr1 = seq[cdr1_start:cdr1_end] if len(seq) > cdr1_end else None
+            cdr2 = seq[cdr2_start:cdr2_end] if len(seq) > cdr2_end else None
+            cdr3 = seq[cdr3_start:cdr3_end] if len(seq) > cdr3_end else None
+            
+            return {
+                'cdr1': cdr1,
+                'cdr2': cdr2,
+                'cdr3': cdr3
+            }
+        except Exception as e:
+            print(f"Failed to extract CDRs: {e}")
+            return {'cdr1': None, 'cdr2': None, 'cdr3': None}
+    
     def extract_cdrs(seq, scheme='chothia'):
+        # Try abnumber first, fallback to simple complementarity determining region extraction
         if not seq:
             return {'cdr1': None, 'cdr2': None, 'cdr3': None}
+        
         try:
+            from abnumber import Chain
             chain = Chain(seq, scheme=scheme)
             return {
                 'cdr1': chain.cdr1_seq,
                 'cdr2': chain.cdr2_seq,
                 'cdr3': chain.cdr3_seq
             }
+        except ImportError:
+            print("abnumber not available, using simple CDR extraction")
+            chain_type = 'heavy' if len(seq) > 200 else 'light'  # rough heuristic
+            return extract_cdrs_simple(seq, chain_type)
         except Exception as e:
-            print(f"Failed to extract CDRs: {e}")
-            return {'cdr1': None, 'cdr2': None, 'cdr3': None}
+            print(f"abnumber failed: {e}, using simple CDR extraction")
+            chain_type = 'heavy' if len(seq) > 200 else 'light'
+            return extract_cdrs_simple(seq, chain_type)
 
     # Process each variant file
     var_files_list = "${variant_files}".split()
@@ -356,6 +407,288 @@ process analyze_cdrs {
                 json.dump(analysis_result, f, indent=2)
 
             print(f"Analyzed CDRs for {target}: {len(df_with_cdrs)} variants")
+    """
+}
+
+/*
+ * Create plots and visualizations (like the notebook)
+ */
+process create_plots {
+    tag "Creating plots"
+    publishDir "${params.outdir}/plots", mode: 'copy'
+
+    input:
+    path analysis_files
+    path csv_files
+
+    output:
+    path "*.png"
+    path "*.html"
+
+    script:
+    """
+    #!/usr/bin/env python3
+    import json
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import numpy as np
+    import glob
+    import os
+
+    # Set style
+    plt.style.use('default')
+    sns.set_palette("husl")
+
+    # Collect all variant data with CDRs
+    all_variants = []
+    
+    for analysis_file in glob.glob("*.json"):
+        if "cdr_analysis" in analysis_file:
+            target = analysis_file.replace("_cdr_analysis.json", "")
+            
+            # Look for corresponding CSV file
+            csv_file = f"{target}_variants.csv"
+            if os.path.exists(csv_file):
+                df = pd.read_csv(csv_file)
+                all_variants.append(df)
+                print(f"Loaded {len(df)} variants for {target}")
+            else:
+                print(f"CSV file not found: {csv_file}")
+                # List all files in current directory for debugging
+                print("Available files:", os.listdir("."))
+    
+    if not all_variants:
+        print("No variant data found for plotting")
+        # Create empty plots
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.text(0.5, 0.5, 'No data available for plotting', 
+                ha='center', va='center', transform=ax.transAxes)
+        plt.savefig("no_data_plot.png", dpi=150, bbox_inches='tight')
+        plt.close()
+        exit(0)
+    
+    # Combine all variants
+    combined_df = pd.concat(all_variants, ignore_index=True)
+    print(f"Total variants for plotting: {len(combined_df)}")
+
+    # 1. CDR Diversity Bar Plot
+    if 'heavy_cdr1' in combined_df.columns:
+        # Prepare data for CDR diversity plot
+        cdr_columns = ['heavy_cdr1', 'heavy_cdr2', 'heavy_cdr3', 'light_cdr1', 'light_cdr2', 'light_cdr3']
+        cdr_data = []
+        
+        for col in cdr_columns:
+            if col in combined_df.columns:
+                unique_count = combined_df[col].nunique()
+                chain = 'Heavy' if 'heavy' in col else 'Light'
+                cdr_num = col.split('_')[-1].replace('cdr', 'CDR')
+                
+                cdr_data.append({
+                    'CDR': cdr_num,
+                    'Chain': chain,
+                    'Unique_Count': unique_count
+                })
+        
+        if cdr_data:
+            cdr_counts_df = pd.DataFrame(cdr_data)
+            
+            plt.figure(figsize=(10, 6))
+            sns.barplot(data=cdr_counts_df, x='CDR', y='Unique_Count', hue='Chain')
+            plt.title('Number of Unique CDR Sequences by Region and Chain')
+            plt.ylabel('Unique Sequence Count')
+            plt.xlabel('CDR Region')
+            plt.legend(title='Chain')
+            plt.tight_layout()
+            plt.savefig("cdr_diversity_plot.png", dpi=150, bbox_inches='tight')
+            plt.close()
+            print("Created CDR diversity plot")
+
+    # 2. Feature Pairplot
+    features = ['global_score', 'score', 'mutations', 'seq_recovery']
+    available_features = [f for f in features if f in combined_df.columns]
+    
+    if len(available_features) > 1 and 'target' in combined_df.columns:
+        plt.figure(figsize=(12, 10))
+        
+        # Create a grid of subplots for pairwise relationships
+        n_features = len(available_features)
+        fig, axes = plt.subplots(n_features, n_features, figsize=(15, 15))
+        
+        if n_features == 1:
+            axes = [[axes]]
+        elif n_features == 2:
+            axes = [axes]
+        
+        for i, feat1 in enumerate(available_features):
+            for j, feat2 in enumerate(available_features):
+                ax = axes[i][j] if n_features > 1 else axes[i]
+                
+                if i == j:
+                    # Diagonal: histogram
+                    for target in combined_df['target'].unique():
+                        data = combined_df[combined_df['target'] == target][feat1]
+                        ax.hist(data, alpha=0.7, label=target, bins=20)
+                    ax.set_xlabel(feat1)
+                    ax.set_ylabel('Count')
+                    ax.legend()
+                else:
+                    # Off-diagonal: scatter plot
+                    for target in combined_df['target'].unique():
+                        data = combined_df[combined_df['target'] == target]
+                        ax.scatter(data[feat2], data[feat1], alpha=0.7, label=target, s=20)
+                    ax.set_xlabel(feat2)
+                    ax.set_ylabel(feat1)
+                    if i == 0 and j == n_features-1:  # Only show legend on top-right
+                        ax.legend()
+        
+        plt.suptitle('Feature Relationships Across Targets', fontsize=16)
+        plt.tight_layout()
+        plt.savefig("feature_pairplot.png", dpi=150, bbox_inches='tight')
+        plt.close()
+        print("Created feature pairplot")
+
+    # 3. Individual target plots
+    for target in combined_df['target'].unique():
+        target_data = combined_df[combined_df['target'] == target]
+        
+        # Score distribution
+        plt.figure(figsize=(12, 4))
+        
+        plt.subplot(1, 3, 1)
+        plt.hist(target_data['score'], bins=20, alpha=0.7, color='skyblue')
+        plt.title(f'{target} - Score Distribution')
+        plt.xlabel('Score')
+        plt.ylabel('Count')
+        
+        plt.subplot(1, 3, 2)
+        plt.hist(target_data['global_score'], bins=20, alpha=0.7, color='lightgreen')
+        plt.title(f'{target} - Global Score Distribution')
+        plt.xlabel('Global Score')
+        plt.ylabel('Count')
+        
+        plt.subplot(1, 3, 3)
+        plt.hist(target_data['mutations'], bins=20, alpha=0.7, color='salmon')
+        plt.title(f'{target} - Mutations Distribution')
+        plt.xlabel('Number of Mutations')
+        plt.ylabel('Count')
+        
+        plt.tight_layout()
+        plt.savefig(f"{target}_distributions.png", dpi=150, bbox_inches='tight')
+        plt.close()
+        print(f"Created distribution plots for {target}")
+
+    # 4. Create an interactive HTML report
+    html_content = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Antibody Engineering Analysis Plots</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; }}
+            .plot {{ margin: 20px 0; text-align: center; }}
+            .plot img {{ max-width: 100%; height: auto; border: 1px solid #ddd; }}
+            h1, h2 {{ color: #333; }}
+            .summary {{ background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+        </style>
+    </head>
+    <body>
+        <h1>Antibody Engineering Analysis Plots</h1>
+        
+        <div class="summary">
+            <h2>Summary</h2>
+            <p><strong>Total Variants:</strong> {len(combined_df)}</p>
+            <p><strong>Targets:</strong> {', '.join(combined_df['target'].unique())}</p>
+            <p><strong>Average Score:</strong> {combined_df['score'].mean():.3f}</p>
+            <p><strong>Average Global Score:</strong> {combined_df['global_score'].mean():.3f}</p>
+            <p><strong>Average Mutations:</strong> {combined_df['mutations'].mean():.1f}</p>
+        </div>
+    '''
+    
+    # Add plots to HTML
+    plot_files = glob.glob("*.png")
+    for plot_file in sorted(plot_files):
+        html_content += f'''
+        <div class="plot">
+            <h2>{plot_file.replace('.png', '').replace('_', ' ').title()}</h2>
+            <img src="{plot_file}" alt="{plot_file}">
+        </div>
+        '''
+    
+    html_content += '''
+    </body>
+    </html>
+    '''
+    
+    with open("plots_report.html", "w") as f:
+        f.write(html_content)
+    
+    print("Created interactive plots report")
+    print(f"Generated {len(plot_files)} plot files")
+    """
+}
+
+/*
+ * Create CSV output with CDR data (like the notebook)
+ */
+process create_csv_output {
+    tag "Creating CSV output"
+    publishDir "${params.outdir}/csv", mode: 'copy'
+
+    input:
+    path analysis_files
+
+    output:
+    path "variant_candidates.csv"
+
+    script:
+    """
+    #!/usr/bin/env python3
+    import json
+    import pandas as pd
+    import glob
+    import os
+
+    # Collect all variant data with CDRs
+    all_variants = []
+    
+    for analysis_file in glob.glob("*.json"):
+        if "cdr_analysis" in analysis_file:
+            target = analysis_file.replace("_cdr_analysis.json", "")
+            
+            # Look for corresponding CSV file
+            csv_file = f"{target}_variants.csv"
+            if os.path.exists(csv_file):
+                df = pd.read_csv(csv_file)
+                all_variants.append(df)
+                print(f"Loaded {len(df)} variants for {target}")
+    
+    if all_variants:
+        # Combine all variants
+        combined_df = pd.concat(all_variants, ignore_index=True)
+        
+        # Select the same columns as the notebook
+        output_columns = [
+            "heavy", "light", "global_score", "score", "mutations", "seq_recovery", "target",
+            "heavy_cdr1", "heavy_cdr2", "heavy_cdr3", "light_cdr1", "light_cdr2", "light_cdr3"
+        ]
+        
+        # Only include columns that exist
+        available_columns = [col for col in output_columns if col in combined_df.columns]
+        final_df = combined_df[available_columns]
+        
+        # Save to CSV
+        final_df.to_csv("variant_candidates.csv", index=False)
+        print(f"Created variant_candidates.csv with {len(final_df)} variants")
+        print(f"Columns: {list(final_df.columns)}")
+    else:
+        print("No variant data found")
+        # Create empty CSV with expected columns
+        empty_df = pd.DataFrame(columns=[
+            "heavy", "light", "global_score", "score", "mutations", "seq_recovery", "target",
+            "heavy_cdr1", "heavy_cdr2", "heavy_cdr3", "light_cdr1", "light_cdr2", "light_cdr3"
+        ])
+        empty_df.to_csv("variant_candidates.csv", index=False)
     """
 }
 
@@ -478,6 +811,12 @@ workflow {
     
     // Analyze CDRs
     analyze_cdrs(generate_variants.out)
+    
+    // Create plots and visualizations (like the notebook)
+    create_plots(analyze_cdrs.out[0], analyze_cdrs.out[1])
+    
+    // Create CSV output (like the notebook)
+    create_csv_output(analyze_cdrs.out[0])
     
     // Create summary
     create_summary(analyze_cdrs.out[0])

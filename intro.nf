@@ -85,7 +85,17 @@ process predict_with_biolm {
     #!/usr/bin/env python3
     import json
     import os
+    import sys
     from biolmai import BioLM
+
+    # Check if API token is provided
+    # Try parameter first, then environment variable
+    token = "${params.token}" if "${params.token}".strip() else os.getenv('BIOLMAI_TOKEN', '')
+    if not token.strip():
+        print("ERROR: BioLM API token is not set!")
+        print("Please set your BIOLMAI_TOKEN environment variable or use --token parameter")
+        print("Get your token from: https://biolm.ai/")
+        sys.exit(1)
 
     # Read the FASTA file
     with open("${seq_file}", "r") as f:
@@ -102,7 +112,7 @@ process predict_with_biolm {
         entity="esmfold",
         action="predict",
         items=[{"sequence": sequence}],
-        api_key="${params.token}"
+        api_key=token
     )
 
     # Save JSON result

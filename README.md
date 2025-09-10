@@ -31,6 +31,8 @@ curl -s https://get.nextflow.io | bash
    export BIOLMAI_TOKEN="your_token_here"
    ```
 
+   **Note**: The workflows include built-in token validation and will provide clear error messages if the token is missing or invalid.
+
 ### 3. Run the Workflows
 
 #### **Protein Structure Prediction (`intro.nf`)**
@@ -278,7 +280,7 @@ nextflow run antibody_engineering.nf \
 
 ## Troubleshooting
 
-- **API Token Issues**: Ensure `BIOLMAI_TOKEN` is set correctly
+- **API Token Issues**: Ensure `BIOLMAI_TOKEN` is set correctly. The workflows now include graceful token validation and will provide clear error messages if the token is missing.
 - **Import Error**: Run `pip install biolmai`
 - **Workflow errors**: Check the `.nextflow.log` file for details
 - **API Rate Limits**: BioLM has rate limits; wait between requests if needed
