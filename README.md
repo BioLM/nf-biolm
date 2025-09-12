@@ -4,7 +4,7 @@
 [![run with docker](https://img.shields.io/badge/docker-%20%20%F0%9F%8C%A2%20%20run%20with%20docker-blue.svg)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/singularity-%20%20%F0%9F%8C%A2%20%20run%20with%20singularity-orange.svg)](https://sylabs.io/docs/)
 [![Launch on Seqera Platform](https://img.shields.io/badge/launch%20on-seqera%20platform-blue.svg)](https://cloud.seqera.io/)
-[![BioLM SDK](https://img.shields.io/badge/biolm%20sdk-%E2%89%A5%200.1.0-green.svg)](https://github.com/BioLM/biolm-python)
+[![BioLM SDK](https://img.shields.io/badge/biolm%20sdk-%E2%89%A5%200.1.0-green.svg)](https://github.com/BioLM/py-biolm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A comprehensive example demonstrating how to use the BioLM SDK within Nextflow pipelines for protein structure prediction and antibody engineering. This project provides two main workflows:
@@ -213,44 +213,6 @@ The workflow produces comprehensive analysis results:
 - **Analysis files**: CDR diversity analysis (JSON + CSV)
 - **HTML report**: Interactive summary with statistics and visualizations
 
-## Examples
-
-### **Protein Structure Prediction**
-
-#### Demo Mode
-```bash
-nextflow run intro.nf --demo
-# Output: results/DEMO.pdb
-```
-
-#### Default Mode
-```bash
-nextflow run intro.nf
-# Output: results/GFP.pdb
-```
-
-#### Custom FASTA
-```bash
-nextflow run intro.nf --input my_proteins.fasta
-# Output: results/sequence1.pdb, results/sequence2.pdb, etc.
-```
-
-### **Antibody Engineering**
-
-#### Quick Start
-```bash
-nextflow run antibody_engineering.nf --num_variants 5
-# Output: results/antibody_engineering_summary.html + analysis files
-```
-
-#### Production Run
-```bash
-nextflow run antibody_engineering.nf \
-  --num_variants 50 \
-  --sampling_temp 0.9
-# Output: Comprehensive analysis for all targets
-```
-
 ## What You Get
 
 ### **Protein Structure Prediction (`intro.nf`)**
@@ -291,3 +253,10 @@ The workflow can be easily customized by:
 1. **Modifying sequences**: Edit the hardcoded sequences in the workflow
 2. **Adding parameters**: Extend the parameter list for additional options
 3. **Changing output format**: Modify the PDB extraction logic
+
+## Related Resources
+
+- **Blog Post**: [Scaling BioLM Workflows with Nextflow: From Notebooks to Production Pipelines](https://blog.biolm.ai/scaling-biolm-workflows-with-nextflow/) - Learn more about integrating BioLM with Nextflow workflows
+- **BioLM Documentation**: [https://biolm.ai/](https://biolm.ai/) - Official BioLM platform and API documentation
+- **Nextflow Documentation**: [https://www.nextflow.io/](https://www.nextflow.io/) - Nextflow workflow framework documentation
+- **Seqera Platform**: [https://cloud.seqera.io/](https://cloud.seqera.io/) - Cloud-native platform for running Nextflow workflows
