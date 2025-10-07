@@ -436,9 +436,11 @@ process create_plots {
     import glob
     import os
 
-    # Set style
+    # Set style with better colors
     plt.style.use('default')
-    sns.set_palette("husl")
+    # Use a professional color palette instead of the terrible "husl" colors
+    professional_colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D', '#7209B7', '#0B6E4F']
+    sns.set_palette(professional_colors)
 
     # Collect all variant data with CDRs
     all_variants = []
@@ -494,15 +496,18 @@ process create_plots {
             cdr_counts_df = pd.DataFrame(cdr_data)
             
             plt.figure(figsize=(10, 6))
-            sns.barplot(data=cdr_counts_df, x='CDR', y='Unique_Count', hue='Chain')
-            plt.title('Number of Unique CDR Sequences by Region and Chain')
-            plt.ylabel('Unique Sequence Count')
-            plt.xlabel('CDR Region')
-            plt.legend(title='Chain')
+            # Use specific, professional colors for Heavy vs Light chains
+            chain_colors = {'Heavy': '#1f77b4', 'Light': '#ff7f0e'}  # Blue and Orange - much better!
+            sns.barplot(data=cdr_counts_df, x='CDR', y='Unique_Count', hue='Chain', palette=chain_colors)
+            plt.title('Number of Unique CDR Sequences by Region and Chain', fontsize=14, fontweight='bold')
+            plt.ylabel('Unique Sequence Count', fontsize=12)
+            plt.xlabel('CDR Region', fontsize=12)
+            plt.legend(title='Chain', title_fontsize=12, fontsize=11)
+            plt.grid(axis='y', alpha=0.3)
             plt.tight_layout()
             plt.savefig("cdr_diversity_plot.png", dpi=150, bbox_inches='tight')
             plt.close()
-            print("Created CDR diversity plot")
+            print("Created CDR diversity plot with improved colors")
 
     # 2. Feature Pairplot
     features = ['global_score', 'score', 'mutations', 'seq_recovery']
@@ -625,6 +630,239 @@ process create_plots {
     
     print("Created interactive plots report")
     print(f"Generated {len(plot_files)} plot files")
+    """
+}
+
+/*
+ * Create sequence alignment plots (like the notebook)
+ */
+process create_sequence_alignment {
+    tag "Creating sequence alignment plots"
+    publishDir "${params.outdir}/plots", mode: 'copy'
+
+    input:
+    path analysis_files
+
+    output:
+    path "*.png"
+    path "*.html"
+
+    script:
+    """
+    #!/usr/bin/env python3
+    import json
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    import seaborn as sns
+    import numpy as np
+    import glob
+    import os
+    from collections import Counter
+    # Note: Bio.pairwise2 is deprecated, using simple consensus approach instead
+
+    # Set style with better colors
+    plt.style.use('default')
+    professional_colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D', '#7209B7', '#0B6E4F']
+    sns.set_palette(professional_colors)
+
+    def create_consensus_sequence(sequences):
+        if not sequences:
+            return ""
+        
+        # Find the most common length
+        lengths = [len(seq) for seq in sequences if seq]
+        if not lengths:
+            return ""
+        
+        consensus_length = max(set(lengths), key=lengths.count)
+        
+        # Create consensus sequence
+        consensus = []
+        for pos in range(consensus_length):
+            amino_acids = []
+            for seq in sequences:
+                if seq and len(seq) > pos:
+                    amino_acids.append(seq[pos])
+            
+            if amino_acids:
+                # Get most common amino acid at this position
+                counter = Counter(amino_acids)
+                consensus.append(counter.most_common(1)[0][0])
+        
+        return ''.join(consensus)
+
+    def create_sequence_alignment_plot(target, heavy_sequences, light_sequences):
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 8))
+        
+        # Heavy chain alignment
+        if heavy_sequences:
+            consensus_heavy = create_consensus_sequence(heavy_sequences[:10])  # Use first 10 for clarity
+            
+            # Create a simple alignment visualization
+            ax1.text(0.02, 0.8, f'{target} Heavy Chain Consensus (first 10 sequences):', 
+                    transform=ax1.transAxes, fontsize=12, fontweight='bold')
+            ax1.text(0.02, 0.7, f'Consensus: {consensus_heavy[:50]}...' if len(consensus_heavy) > 50 else f'Consensus: {consensus_heavy}', 
+                    transform=ax1.transAxes, fontsize=10, family='monospace')
+            
+            # Show individual sequences
+            for i, seq in enumerate(heavy_sequences[:5]):  # Show first 5
+                seq_display = seq[:50] + "..." if len(seq) > 50 else seq
+                ax1.text(0.02, 0.6 - i*0.08, f'Seq {i+1}:   {seq_display}', 
+                        transform=ax1.transAxes, fontsize=9, family='monospace', alpha=0.7)
+        
+        ax1.set_xlim(0, 1)
+        ax1.set_ylim(0, 1)
+        ax1.axis('off')
+        ax1.set_title(f'{target} Heavy Chain Sequence Alignment', fontsize=14, fontweight='bold')
+        
+        # Light chain alignment
+        if light_sequences:
+            consensus_light = create_consensus_sequence(light_sequences[:10])
+            
+            ax2.text(0.02, 0.8, f'{target} Light Chain Consensus (first 10 sequences):', 
+                    transform=ax2.transAxes, fontsize=12, fontweight='bold')
+            ax2.text(0.02, 0.7, f'Consensus: {consensus_light[:50]}...' if len(consensus_light) > 50 else f'Consensus: {consensus_light}', 
+                    transform=ax2.transAxes, fontsize=10, family='monospace')
+            
+            for i, seq in enumerate(light_sequences[:5]):
+                seq_display = seq[:50] + "..." if len(seq) > 50 else seq
+                ax2.text(0.02, 0.6 - i*0.08, f'Seq {i+1}:   {seq_display}', 
+                        transform=ax2.transAxes, fontsize=9, family='monospace', alpha=0.7)
+        
+        ax2.set_xlim(0, 1)
+        ax2.set_ylim(0, 1)
+        ax2.axis('off')
+        ax2.set_title(f'{target} Light Chain Sequence Alignment', fontsize=14, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig(f"{target}_sequence_alignment.png", dpi=150, bbox_inches='tight')
+        plt.close()
+
+    def create_cdr_alignment_plot(target, cdr_data):
+        fig, axes = plt.subplots(3, 2, figsize=(16, 12))
+        fig.suptitle(f'{target} CDR Region Alignments', fontsize=16, fontweight='bold')
+        
+        cdr_regions = [
+            ('heavy_cdr1', 'Heavy CDR1'),
+            ('heavy_cdr2', 'Heavy CDR2'), 
+            ('heavy_cdr3', 'Heavy CDR3'),
+            ('light_cdr1', 'Light CDR1'),
+            ('light_cdr2', 'Light CDR2'),
+            ('light_cdr3', 'Light CDR3')
+        ]
+        
+        for idx, (cdr_col, title) in enumerate(cdr_regions):
+            row = idx // 2
+            col = idx % 2
+            ax = axes[row, col]
+            
+            if cdr_col in cdr_data.columns:
+                sequences = cdr_data[cdr_col].dropna().tolist()
+                if sequences:
+                    consensus = create_consensus_sequence(sequences)
+                    
+                    # Create alignment visualization
+                    ax.text(0.05, 0.9, f'{title} Consensus:', 
+                            transform=ax.transAxes, fontsize=10, fontweight='bold')
+                    ax.text(0.05, 0.8, consensus, 
+                            transform=ax.transAxes, fontsize=9, family='monospace',
+                            bbox=dict(boxstyle="round,pad=0.3", facecolor='lightblue', alpha=0.7))
+                    
+                    # Show diversity metrics
+                    unique_count = len(set(sequences))
+                    total_count = len(sequences)
+                    diversity = unique_count / total_count if total_count > 0 else 0
+                    
+                    ax.text(0.05, 0.6, f'Unique sequences: {unique_count}/{total_count}', 
+                            transform=ax.transAxes, fontsize=9)
+                    ax.text(0.05, 0.5, f'Diversity ratio: {diversity:.2f}', 
+                            transform=ax.transAxes, fontsize=9)
+                    
+                    # Show sample sequences
+                    for i, seq in enumerate(sequences[:3]):  # Show first 3
+                        ax.text(0.05, 0.4 - i*0.08, f'Sample {i+1}: {seq}', 
+                                transform=ax.transAxes, fontsize=8, family='monospace', alpha=0.7)
+            
+            ax.set_xlim(0, 1)
+            ax.set_ylim(0, 1)
+            ax.axis('off')
+            ax.set_title(title, fontsize=11, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig(f"{target}_cdr_alignment.png", dpi=150, bbox_inches='tight')
+        plt.close()
+
+    # Process each target
+    for analysis_file in glob.glob("*.json"):
+        if "cdr_analysis" in analysis_file:
+            target = analysis_file.replace("_cdr_analysis.json", "")
+            
+            # Look for corresponding CSV file
+            csv_file = f"{target}_variants.csv"
+            if os.path.exists(csv_file):
+                df = pd.read_csv(csv_file)
+                
+                # Create sequence alignment plots
+                if 'heavy' in df.columns and 'light' in df.columns:
+                    heavy_sequences = df['heavy'].dropna().tolist()
+                    light_sequences = df['light'].dropna().tolist()
+                    
+                    create_sequence_alignment_plot(target, heavy_sequences, light_sequences)
+                    print(f"Created sequence alignment plot for {target}")
+                
+                # Create CDR alignment plots
+                cdr_columns = ['heavy_cdr1', 'heavy_cdr2', 'heavy_cdr3', 'light_cdr1', 'light_cdr2', 'light_cdr3']
+                available_cdr_cols = [col for col in cdr_columns if col in df.columns]
+                
+                if available_cdr_cols:
+                    cdr_data = df[available_cdr_cols]
+                    create_cdr_alignment_plot(target, cdr_data)
+                    print(f"Created CDR alignment plot for {target}")
+
+    # Create summary HTML for alignment plots
+    html_content = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Antibody Sequence Alignment Analysis</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .plot { margin: 20px 0; text-align: center; }
+            .plot img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+            h1, h2 { color: #333; }
+            .summary { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <h1>Antibody Sequence Alignment Analysis</h1>
+        
+        <div class="summary">
+            <h2>Summary</h2>
+            <p>Sequence alignment plots showing consensus sequences and CDR region diversity for each antibody target.</p>
+        </div>
+    '''
+    
+    # Add alignment plots to HTML
+    alignment_plots = glob.glob("*_sequence_alignment.png") + glob.glob("*_cdr_alignment.png")
+    for plot_file in sorted(alignment_plots):
+        plot_name = plot_file.replace('.png', '').replace('_', ' ').title()
+        html_content += f'''
+        <div class="plot">
+            <h2>{plot_name}</h2>
+            <img src="{plot_file}" alt="{plot_file}">
+        </div>
+        '''
+    
+    html_content += '''
+    </body>
+    </html>
+    '''
+    
+    with open("sequence_alignment_report.html", "w") as f:
+        f.write(html_content)
+    
+    print("Created sequence alignment plots and report")
     """
 }
 
@@ -814,6 +1052,9 @@ workflow {
     
     // Create plots and visualizations (like the notebook)
     create_plots(analyze_cdrs.out[0], analyze_cdrs.out[1])
+    
+    // Create sequence alignment plots (like the notebook)
+    create_sequence_alignment(analyze_cdrs.out[0])
     
     // Create CSV output (like the notebook)
     create_csv_output(analyze_cdrs.out[0])
