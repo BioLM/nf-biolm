@@ -2,7 +2,6 @@
 
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A5%2020.0.0-brightgreen.svg)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/docker-%20%20%F0%9F%8C%A2%20%20run%20with%20docker-blue.svg)](https://www.docker.com/)
-[![run with singularity](https://img.shields.io/badge/singularity-%20%20%F0%9F%8C%A2%20%20run%20with%20singularity-orange.svg)](https://sylabs.io/docs/)
 [![Launch on Seqera Platform](https://img.shields.io/badge/launch%20on-seqera%20platform-blue.svg)](https://cloud.seqera.io/)
 [![BioLM SDK](https://img.shields.io/badge/biolm%20sdk-%E2%89%A5%200.1.0-green.svg)](https://github.com/BioLM/py-biolm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
