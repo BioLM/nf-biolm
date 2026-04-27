@@ -15,8 +15,12 @@ A comprehensive example demonstrating how to use the BioLM SDK within Nextflow p
 
 ### 1. Install Dependencies
 ```bash
-# Install BioLM SDK
-pip install biolmai
+# Create virtual environment
+pyenv virtualenv 3.11.5 nf-biolm
+pyenv activate nf-biolm
+
+# Install dependencies
+pip install -r requirements.txt
 
 # Install Nextflow (if needed)
 curl -s https://get.nextflow.io | bash
