@@ -6,17 +6,28 @@
 [![BioLM SDK](https://img.shields.io/badge/biolm%20sdk-%E2%89%A5%201.5.0-green.svg)](https://github.com/BioLM/biolm-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A catalog of 10 Nextflow DSL2 workflows built on the **BioLM SDK** (`biolm` CLI /
-`import biolm`), sharing protocol definitions with the sibling
-the in-repo protocol catalog repo so the same
-YAML powers nf-biolm, `biolm-cwl`, `biolm-galaxy`, and `biolm-kedro`.
+Nextflow DSL2 workflows on the **BioLM SDK** (`biolm` CLI / `import biolm`).
+Protocol YAML and demo fixtures are vendored in-repo under `protocols/` and
+`fixtures/`. Every workflow supports `--demo` (local mocks, no token).
 
-Every workflow supports a `--demo` mode that runs against local, deterministic
-mock data — no token, no network access, and no billing — so you can smoke-test
-the whole catalog in seconds, then flip to the real BioLM API with the same
-command.
+## Workflows
 
-## 🚀 Quick Start (5 minutes)
+| Workflow | Kind | Backing protocol / model | Entry point |
+|---|---|---|---|
+| `structure_predict` | Model | `esmfold` (optional `--boltz2` / `--structure_model boltz-2`) | `workflows/structure_predict.nf` |
+| `embed_cluster` | Protocol | `protocols/embed_cluster/protocol.yaml` | `workflows/embed_cluster.nf` |
+| `dms_landscape` | Protocol | `protocols/dms_landscape/protocol.yaml` | `workflows/dms_landscape.nf` |
+| `antibody_campaign` | Protocol | `protocols/antibody_campaign/protocol.yaml` | `workflows/antibody_campaign.nf` |
+| `library_screen` | Protocol | `protocols/library_screen/protocol.yaml` | `workflows/library_screen.nf` |
+| `parallel_fold_farm` | Model scatter | `esmfold`/`boltz-2`, one task per sequence | `workflows/parallel_fold_farm.nf` |
+| `biosecurity_screen` | Protocol | `protocols/biosecurity_screen/protocol.yaml` | `workflows/biosecurity_screen.nf` |
+| `inverse_fold` | Protocol | `protocols/inverse_fold/protocol.yaml` | `workflows/inverse_fold.nf` |
+| `sat_mut_stability` | Protocol | `protocols/sat_mut_stability/protocol.yaml` | `workflows/sat_mut_stability.nf` |
+| `trickle_screen` | Iterative | `library_screen` protocol, re-run per round | `workflows/trickle_screen.nf` |
+
+Root wrappers: `intro.nf` → `structure_predict`; `antibody_engineering.nf` → `antibody_campaign`.
+
+## Quick Start
 
 ### 1. Install dependencies
 
@@ -28,33 +39,18 @@ pip install "biolm-sdk[pipeline]"
 curl -s https://get.nextflow.io | bash
 ```
 
-`[pipeline]` pulls in the extras needed for `biolm protocol run-local`, used by
-every protocol-based workflow below.
+`[pipeline]` pulls in the extras needed for `biolm protocol run-local`.
 
-### 2. Clone the shared protocol catalog
-
-nf-biolm does not vendor protocol YAML — it reads it from a sibling checkout of
-the in-repo protocol catalog:
-
-```bash
-# protocols/ and fixtures/ are vendored in this repository
-```
-
-By default nf-biolm looks for it at `.` (relative to this
-repo). Override with `--protocols_root <path>` or the `BIOLM_PROTOCOLS_ROOT`
-env var if you keep it elsewhere.
-
-### 3. Try it with no token at all
+### 2. Try it with no token
 
 ```bash
 nextflow run workflows/structure_predict.nf --demo
 nextflow run workflows/library_screen.nf --demo
 ```
 
-See [Demo smoke-test commands](#demo-smoke-test-commands-all-10-workflows) for
-the full catalog.
+See [Demo smoke-test commands](#demo-smoke-test-commands) for the full set.
 
-### 4. Get your BioLM token for real runs
+### 3. Get your BioLM token for real runs
 
 1. Visit [BioLM](https://biolm.ai/) and sign up for an API token.
 2. Export it:
@@ -70,6 +66,9 @@ the full catalog.
    ```bash
    nextflow run workflows/structure_predict.nf
    ```
+
+Override the in-repo catalog root with `--protocols_root <path>` or
+`BIOLM_PROTOCOLS_ROOT` if needed (default `.`).
 
 ## Backend & execution switches
 
@@ -104,55 +103,17 @@ Backend/execution configuration lives in `modules/backend.nf`
 (`biolmEnvExports()`, `resolveProtocolYaml()`, `resolveDemoInputs()`,
 `protocolSlug()`) and is shared by every workflow.
 
-## Workflow catalog
+## Demo smoke-test commands
 
-All 10 workflows live under `workflows/*.nf` and share the same demo fixtures
-and catalog metadata as `biolm-cwl`, `biolm-galaxy`, and `biolm-kedro` (see
-[`biolm-protocols/CATALOG.md`](./CATALOG.md)).
-
-### Core 5
-
-| Workflow | Kind | Backing protocol / model | Entry point |
-|---|---|---|---|
-| `structure_predict` | Model | `esmfold` (optional `--boltz2` / `--structure_model boltz-2`) | `workflows/structure_predict.nf` |
-| `embed_cluster` | Protocol | `protocols/embed_cluster/protocol.yaml` | `workflows/embed_cluster.nf` |
-| `dms_landscape` | Protocol | `protocols/dms_landscape/protocol.yaml` | `workflows/dms_landscape.nf` |
-| `antibody_campaign` | Protocol | `protocols/antibody_campaign/protocol.yaml` | `workflows/antibody_campaign.nf` |
-| `library_screen` | Protocol | `protocols/library_screen/protocol.yaml` | `workflows/library_screen.nf` |
-
-### Extras 6–10
-
-| Workflow | Kind | Backing protocol / model | Entry point |
-|---|---|---|---|
-| `parallel_fold_farm` | Model scatter | `esmfold`/`boltz-2`, one task per sequence, `maxForks`-bounded | `workflows/parallel_fold_farm.nf` |
-| `biosecurity_screen` | Protocol | `protocols/biosecurity_screen/protocol.yaml` | `workflows/biosecurity_screen.nf` |
-| `inverse_fold` | Protocol | `protocols/inverse_fold/protocol.yaml` | `workflows/inverse_fold.nf` |
-| `sat_mut_stability` | Protocol | `protocols/sat_mut_stability/protocol.yaml` | `workflows/sat_mut_stability.nf` |
-| `trickle_screen` | Iterative extra | `library_screen` protocol, re-run per round with survivor-seeded mutants | `workflows/trickle_screen.nf` |
-
-Two thin backward-compatible wrappers remain at the repo root:
-
-- `intro.nf` → calls `structure_predict` (the original biolmai ESMFold demo).
-- `antibody_engineering.nf` → calls `antibody_campaign` (the original
-  AntiFold-only workflow is now the shared, richer `antibody_campaign`
-  protocol; `antibody_engineering_test.nf`'s mock-data pattern is now built in
-  via `--demo`, so that file has been removed).
-
-## Demo smoke-test commands (all 10 workflows)
-
-Every command below runs fully offline against `data/demo/*` fixtures (mirrored
-from `biolm-protocols/fixtures/demo/`) and local mock generators — no
-`BIOLM_TOKEN` required.
+Every command below runs fully offline against `data/demo/*` fixtures and local
+mock generators — no `BIOLM_TOKEN` required.
 
 ```bash
-# Core 5
 nextflow run workflows/structure_predict.nf --demo
 nextflow run workflows/embed_cluster.nf --demo
 nextflow run workflows/dms_landscape.nf --demo
 nextflow run workflows/antibody_campaign.nf --demo
 nextflow run workflows/library_screen.nf --demo
-
-# Extras 6-10
 nextflow run workflows/parallel_fold_farm.nf --demo
 nextflow run workflows/biosecurity_screen.nf --demo
 nextflow run workflows/inverse_fold.nf --demo
