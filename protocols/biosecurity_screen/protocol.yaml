@@ -1,0 +1,46 @@
+name: biolm/biosecurity-screen-v1
+schema_version: 1
+protocol_version: "1.0.0"
+description: >
+  Classify sequences for toxin-like risk with BioLMTox2, then embed for
+  similarity follow-up in framework post-processing.
+
+about:
+  title: Biosecurity toxin screen
+  description: BioLMTox2 classification over a sequence library.
+  keywords: [biosecurity, biolmtox, toxin]
+
+example_inputs:
+  sequences:
+    - MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+    - MENDELGGGGSKTAYIAKQRQISFVKSHFSRQL
+
+inputs:
+  sequences:
+    type: list_of_str
+    label: Sequences to screen
+    required: true
+    initial: []
+
+tasks:
+  - id: classify
+    slug: biolmtox2
+    action: predict
+    request_body:
+      items: ${{ sequences }}
+    # Live API returns both string `label` and numeric `score`. biolm-sdk
+    # run-local PredictionStage currently extracts numeric scalars reliably;
+    # map `score` and derive discrete calls downstream if needed.
+    response_mapping:
+      toxin_score: score
+
+  - id: embed
+    slug: biolmtox2
+    action: encode
+    depends_on:
+      - classify
+    request_body:
+      items: ${{ sequences }}
+    # biolmtox2 encode returns mean_representation (unlike esm2's embeddings).
+    response_mapping:
+      embedding: mean_representation

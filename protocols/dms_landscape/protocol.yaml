@@ -1,0 +1,43 @@
+name: biolm/dms-landscape-v1
+schema_version: 1
+protocol_version: "1.0.0"
+description: >
+  Score a library of single-point (or multi-point) variant sequences for a
+  stability-oriented mutational landscape. Uses ESM2StabP on full sequences
+  (not masked ESM-1v tokens) so frameworks can pass enumerated mutant FASTA.
+
+about:
+  title: In silico mutational landscape
+  description: Stability scoring over a pre-enumerated mutant library.
+  keywords: [dms, esm2stabp, variant-effect, mutagenesis, stability]
+
+example_inputs:
+  sequences:
+    - MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+    - AKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+    - METAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+  wildtype:
+    MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+
+inputs:
+  sequences:
+    type: list_of_str
+    label: Variant sequences
+    required: true
+    initial: []
+    help_text: Full mutant sequences to score (not masked). Include wild type if desired.
+  wildtype:
+    type: text
+    label: Wild-type sequence
+    required: false
+    initial: ""
+    help_text: Optional reference sequence for documentation / downstream Δ scoring.
+
+tasks:
+  - id: score_variants
+    slug: esm2stabp
+    action: predict
+    request_body:
+      items: ${{ sequences }}
+    response_mapping:
+      score: melting_temperature

@@ -2,6 +2,7 @@
 work/
 .nextflow*
 .nextflow/
+.biolm/
 .nextflow.log
 .cache/
 reports/
@@ -46,3 +47,5 @@ Thumbs.db
 .idea/
 *.swp
 .env
+pipeline_outputs/
+.coverage

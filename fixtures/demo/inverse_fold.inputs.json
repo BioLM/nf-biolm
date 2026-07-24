@@ -1,0 +1,5 @@
+{
+  "pdb": "HEADER    DEMO\nATOM      1  N   ALA A   1      11.104  13.207   9.060  1.00 20.00           N\nATOM      2  CA  ALA A   1      12.560  13.207   9.060  1.00 20.00           C\nATOM      3  C   ALA A   1      13.087  14.620   9.060  1.00 20.00           C\nATOM      4  O   ALA A   1      12.387  15.620   9.060  1.00 20.00           O\nEND\n",
+  "batch_size": 2,
+  "temperature": 0.1
+}

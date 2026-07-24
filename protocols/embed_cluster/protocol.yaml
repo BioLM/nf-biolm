@@ -1,0 +1,44 @@
+name: biolm/embed-cluster-v1
+schema_version: 1
+protocol_version: "1.0.0"
+description: >
+  Encode a sequence library with ESM2, then score each sequence with a
+  temperature/stability proxy so downstream tools can cluster and diversify.
+
+about:
+  title: Embed then score for clustering
+  description: ESM2 embeddings plus a scalar score for library diversification.
+  keywords: [esm2, embeddings, clustering, library]
+
+example_inputs:
+  sequences:
+    - MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+    - MENDELGGGGSKTAYIAKQRQISFVKSHFSRQL
+    - ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMN
+
+inputs:
+  sequences:
+    type: list_of_str
+    label: Protein sequences
+    required: true
+    initial: []
+    help_text: Amino-acid sequences to embed and score.
+
+tasks:
+  - id: encode
+    slug: esm2-150m
+    action: encode
+    request_body:
+      items: ${{ sequences }}
+    response_mapping:
+      embedding: embeddings
+
+  - id: score
+    slug: temberture-regression
+    action: predict
+    depends_on:
+      - encode
+    request_body:
+      items: ${{ sequences }}
+    response_mapping:
+      tm: prediction

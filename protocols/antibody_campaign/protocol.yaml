@@ -1,0 +1,75 @@
+name: biolm/antibody-campaign-v1
+schema_version: 1
+protocol_version: "1.0.0"
+description: >
+  Generate antibody sequence variants with AntiFold from a scaffold PDB, then
+  embed the designed sequences with ESM2 for downstream diversity analysis.
+
+about:
+  title: Antibody engineering campaign
+  description: AntiFold generation followed by ESM2 embeddings.
+  keywords: [antibody, antifold, esm2, cdr]
+
+example_inputs:
+  pdb: "HEADER    DEMO\nATOM      1  N   ALA A   1      11.104  13.207   9.060  1.00  0.00           N\nEND"
+  heavy_chain: "H"
+  light_chain: "L"
+  num_seq_per_target: 4
+  sampling_temp: 0.2
+
+inputs:
+  pdb:
+    type: pdb_text
+    label: Antibody scaffold PDB
+    required: true
+    initial: ""
+    help_text: PDB text for the antibody structure (heavy + light chains).
+  heavy_chain:
+    type: text
+    label: Heavy chain ID
+    required: true
+    initial: "H"
+  light_chain:
+    type: text
+    label: Light chain ID
+    required: true
+    initial: "L"
+  num_seq_per_target:
+    type: integer
+    label: Sequences per target
+    required: false
+    initial: 8
+    min: 1
+    max: 500
+  sampling_temp:
+    type: float
+    label: Sampling temperature
+    required: false
+    initial: 0.2
+    min: 0.0
+    max: 2.0
+
+tasks:
+  - id: generate
+    slug: antifold
+    action: generate
+    request_body:
+      items:
+        - pdb: ${{ pdb }}
+      params:
+        heavy_chain: ${{ heavy_chain }}
+        light_chain: ${{ light_chain }}
+        num_seq_per_target: ${{ num_seq_per_target }}
+        sampling_temp: ${{ sampling_temp }}
+    response_mapping:
+      sequences: sequences
+
+  - id: embed
+    slug: esm2-150m
+    action: encode
+    depends_on:
+      - generate
+    request_body:
+      items: ${{ generate.sequences }}
+    response_mapping:
+      embedding: embeddings

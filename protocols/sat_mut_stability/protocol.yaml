@@ -1,0 +1,33 @@
+name: biolm/sat-mut-stability-v1
+schema_version: 1
+protocol_version: "1.0.0"
+description: >
+  Score a pre-enumerated single-mutant library for stability (sequence-only
+  ESM2StabP). Pair with framework-side enumeration for full saturation mutagenesis.
+
+about:
+  title: Stability scoring for sat-mut libraries
+  description: Rank point-mutant libraries with a stability predictor.
+  keywords: [saturation-mutagenesis, stability, esm2stabp]
+
+example_inputs:
+  sequences:
+    - MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+    - AKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+    - MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+
+inputs:
+  sequences:
+    type: list_of_str
+    label: Mutant library sequences
+    required: true
+    initial: []
+
+tasks:
+  - id: score_stability
+    slug: esm2stabp
+    action: predict
+    request_body:
+      items: ${{ sequences }}
+    response_mapping:
+      stability: melting_temperature

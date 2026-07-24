@@ -1,0 +1,7 @@
+# Demo sequences (tiny — for CI and walkthroughs)
+>demo_wt Demo wild-type peptide
+MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+>demo_v1 Single point mutant
+AKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ
+>demo_v2 Second variant
+MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVA

@@ -1,0 +1,49 @@
+name: biolm/inverse-fold-v1
+schema_version: 1
+protocol_version: "1.0.0"
+description: >
+  Structure-conditioned sequence design with ProteinMPNN from a backbone PDB.
+
+about:
+  title: Inverse fold design
+  description: ProteinMPNN generation conditioned on a PDB backbone.
+  keywords: [protein-mpnn, inverse-folding, design]
+
+example_inputs:
+  pdb: "HEADER    DEMO\nATOM      1  N   ALA A   1      11.104  13.207   9.060  1.00  0.00           N\nEND"
+  batch_size: 8
+  temperature: 0.1
+
+inputs:
+  pdb:
+    type: pdb_text
+    label: Backbone PDB
+    required: true
+    initial: ""
+  batch_size:
+    type: integer
+    label: Batch size (sequences)
+    required: false
+    initial: 16
+    min: 1
+    max: 200
+  temperature:
+    type: float
+    label: Sampling temperature
+    required: false
+    initial: 0.1
+    min: 0.0
+    max: 2.0
+
+tasks:
+  - id: design
+    slug: protein-mpnn
+    action: generate
+    request_body:
+      items:
+        - pdb: ${{ pdb }}
+      params:
+        batch_size: ${{ batch_size }}
+        temperature: ${{ temperature }}
+    response_mapping:
+      sequences: sequences

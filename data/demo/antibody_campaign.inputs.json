@@ -1,0 +1,7 @@
+{
+  "pdb": "HEADER    DEMO\nATOM      1  N   ALA H   1      11.104  13.207   9.060  1.00 20.00           N\nATOM      2  CA  ALA H   1      12.560  13.207   9.060  1.00 20.00           C\nATOM      3  C   ALA H   1      13.087  14.620   9.060  1.00 20.00           C\nATOM      4  O   ALA H   1      12.387  15.620   9.060  1.00 20.00           O\nATOM      5  N   SER L   1      21.104  23.207  19.060  1.00 20.00           N\nATOM      6  CA  SER L   1      22.560  23.207  19.060  1.00 20.00           C\nEND\n",
+  "heavy_chain": "H",
+  "light_chain": "L",
+  "num_seq_per_target": 2,
+  "sampling_temp": 0.2
+}

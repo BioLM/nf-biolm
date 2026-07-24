@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "protocols_root": "protocols",
+  "protocols": {
+    "embed_cluster": {
+      "name": "biolm/embed-cluster-v1",
+      "path": "protocols/embed_cluster/protocol.yaml",
+      "demo_inputs": "fixtures/demo/embed_cluster.inputs.json"
+    },
+    "dms_landscape": {
+      "name": "biolm/dms-landscape-v1",
+      "path": "protocols/dms_landscape/protocol.yaml",
+      "demo_inputs": "fixtures/demo/dms_landscape.inputs.json"
+    },
+    "antibody_campaign": {
+      "name": "biolm/antibody-campaign-v1",
+      "path": "protocols/antibody_campaign/protocol.yaml",
+      "demo_inputs": "fixtures/demo/antibody_campaign.inputs.json"
+    },
+    "library_screen": {
+      "name": "biolm/library-screen-v1",
+      "path": "protocols/library_screen/protocol.yaml",
+      "demo_inputs": "fixtures/demo/library_screen.inputs.json"
+    },
+    "inverse_fold": {
+      "name": "biolm/inverse-fold-v1",
+      "path": "protocols/inverse_fold/protocol.yaml",
+      "demo_inputs": "fixtures/demo/inverse_fold.inputs.json"
+    },
+    "sat_mut_stability": {
+      "name": "biolm/sat-mut-stability-v1",
+      "path": "protocols/sat_mut_stability/protocol.yaml",
+      "demo_inputs": "fixtures/demo/sat_mut_stability.inputs.json"
+    },
+    "biosecurity_screen": {
+      "name": "biolm/biosecurity-screen-v1",
+      "path": "protocols/biosecurity_screen/protocol.yaml",
+      "demo_inputs": "fixtures/demo/biosecurity_screen.inputs.json"
+    }
+  },
+  "models": {
+    "structure_predict": {
+      "primary": "esmfold",
+      "optional": ["boltz-2"]
+    }
+  }
+}
